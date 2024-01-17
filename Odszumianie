@@ -1,0 +1,35 @@
+import numpy as np
+from scipy.fft import fft2, ifft2
+from scipy.ndimage import gaussian_filter
+from matplotlib import pyplot as plt
+from skimage import io, color
+
+def remove_high_frequencies_color(image, sigma=1):
+    image_fft = np.zeros_like(image, dtype=np.complex128)
+    for i in range(image.shape[2]):
+        image_fft[:, :, i] = fft2(image[:, :, i])
+
+    image_fft_filtered = gaussian_filter(np.abs(image_fft), sigma=sigma)
+
+    image_fft_lowpass = image_fft * (image_fft_filtered / np.abs(image_fft_filtered))
+
+    denoised_image = np.zeros_like(image, dtype=np.float64)
+    for i in range(image.shape[2]):
+        denoised_image[:, :, i] = np.abs(ifft2(image_fft_lowpass[:, :, i]))
+
+    return denoised_image
+
+color_image = io.imread('squares.png.png')  
+
+denoised_color_image = remove_high_frequencies_color(color_image)
+
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.imshow(color_image)
+plt.title('Oryginalny Obraz')
+
+plt.subplot(1, 2, 2)
+plt.imshow(denoised_color_image)
+plt.title('Odszumiony Obraz')
+
+plt.show()
